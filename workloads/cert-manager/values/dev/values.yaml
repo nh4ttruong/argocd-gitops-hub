@@ -1,0 +1,31 @@
+cert-manager:
+  global:
+    nodeSelector:
+      env: dev
+
+  dns01RecursiveNameserversOnly: true
+
+  replicaCount: 3
+
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  webhook:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  prometheus:
+    enabled: true
+    servicemonitor:
+      enabled: false

@@ -1,0 +1,20 @@
+# Workload/application project — narrower than the *-infra projects:
+# only Namespace is allowed at cluster scope (needed by CreateNamespace=true).
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: staging-apps
+  namespace: argocd
+spec:
+  description: Staging business applications project
+  sourceRepos:
+    - 'https://github.com/nh4ttruong/argocd-gitops-spokes.git'
+  destinations:
+    - namespace: '*'
+      server: '<STAGING_CLUSTER_API_SERVER>' # staging cluster
+  clusterResourceWhitelist:
+    - group: ''
+      kind: 'Namespace'
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'

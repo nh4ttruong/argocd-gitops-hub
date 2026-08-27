@@ -1,0 +1,26 @@
+# k3d config — Local hub cluster for testing the bootstrap end-to-end.
+# Traefik is disabled so the ingress-nginx infra app can own 80/443.
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: hub
+servers: 1
+agents: 0
+ports:
+  - port: 8080:80
+    nodeFilters:
+      - loadbalancer
+  - port: 8443:443
+    nodeFilters:
+      - loadbalancer
+options:
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+    nodeLabels:
+      # Infra values pin workloads with nodeSelector env=<env>
+      - label: env=hub
+        nodeFilters:
+          - server:*

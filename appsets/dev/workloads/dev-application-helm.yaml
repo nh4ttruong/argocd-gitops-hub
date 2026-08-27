@@ -1,0 +1,59 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: dev-application-helm
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  env: "dev"
+          - git:
+              repoURL: https://github.com/nh4ttruong/argocd-gitops-spokes.git
+              revision: HEAD
+              files:
+                - path: workloads/*/charts/dev/app.yaml
+  template:
+    metadata:
+      name: "{{index .path.segments 3}}-{{index .path.segments 1}}" # {env}-{appname}
+      labels:
+        env: dev
+        engine: helm
+        type: application
+    spec:
+      project: "{{index .path.segments 3}}-apps"
+      sources:
+        - repoURL: https://github.com/nh4ttruong/argocd-gitops-spokes.git
+          targetRevision: HEAD
+          path: "{{.path.path}}"
+          helm:
+            valueFiles:
+              - $values/workloads/{{index .path.segments 1}}/values/common.yaml
+              - $values/workloads/{{index .path.segments 1}}/values/{{index .path.segments 3}}/values.yaml
+              - $values/workloads/{{index .path.segments 1}}/values/{{index .path.segments 3}}/version.yaml
+            ignoreMissingValueFiles: true
+        - repoURL: https://github.com/nh4ttruong/argocd-gitops-spokes.git
+          targetRevision: HEAD
+          ref: values
+      destination:
+        server: "{{.server}}"
+        namespace: "{{.namespace}}" # From app.yaml
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+          - ServerSideDiff=true
+        retry:
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+          limit: 7

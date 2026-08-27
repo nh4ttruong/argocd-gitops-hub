@@ -1,0 +1,65 @@
+---
+# This section needs to be manually applied before the Service and Ingress
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: git-example-svc
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/ignore-resource-updates: 'true'
+subsets:
+  - addresses:
+      - ip: 198.51.100.19
+    ports:
+      - port: 443
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: git-example-svc
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  ports:
+    - port: 443
+      targetPort: 443
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: git-example-ingress
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/upstream-vhost: "git.example.com"
+    nginx.ingress.kubernetes.io/proxy-ssl-server-name: "on"
+    nginx.ingress.kubernetes.io/proxy-ssl-name: "git.example.com"
+    nginx.ingress.kubernetes.io/whitelist-source-range: "198.51.100.0/24,10.0.10.0/24,10.0.11.0/25,10.0.8.0/23"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      # NOTE: do not commit the real token. Populate this annotation's value
+      # from a Secret (e.g. via External Secrets Operator + Vault) instead of
+      # inlining it here.
+      proxy_set_header X-GitLab-Auth "<gitlab-auth-token>";
+spec:
+  rules:
+    - host: git.example.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: git-example-svc
+                port:
+                  number: 443
+            path: /
+            pathType: Prefix
+  tls:
+    - hosts:
+        - git.example.com
+      secretName: example-tls

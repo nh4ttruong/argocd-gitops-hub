@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: dev-application-kustomize
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  env: "dev"
+          - git:
+              repoURL: https://github.com/nh4ttruong/argocd-gitops-spokes.git
+              revision: HEAD
+              files:
+                - path: workloads/*/envs/dev/app.yaml
+  template:
+    metadata:
+      name: "{{index .path.segments 3}}-{{index .path.segments 1}}" # {env}-{appname}
+      labels:
+        env: dev
+        engine: kustomize
+        type: application
+    spec:
+      project: "{{index .path.segments 3}}-apps"
+      source:
+        repoURL: https://github.com/nh4ttruong/argocd-gitops-spokes.git
+        targetRevision: HEAD
+        path: "{{.path.path}}"
+        kustomize:
+          ignoreMissingComponents: true
+      destination:
+        server: "{{.server}}"
+        namespace: "{{.namespace}}" # From app.yaml
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+          - ServerSideDiff=true
+        retry:
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+          limit: 7

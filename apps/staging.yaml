@@ -1,0 +1,34 @@
+# Env-tier Application — Delivers the ApplicationSets of one environment.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: staging
+  namespace: argocd
+  labels:
+    tier: env
+    env: staging
+  annotations:
+    argocd.argoproj.io/sync-wave: "-90"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/nh4ttruong/argocd-gitops-hub.git
+    targetRevision: HEAD
+    path: appsets/staging
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      selfHeal: true
+    retry:
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+      limit: 5
+    syncOptions:
+      - ApplyOutOfSyncOnly=true
+      - Prune=confirm

@@ -1,0 +1,21 @@
+# k3d config — Optional local dev spoke, registered to the hub afterwards.
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: dev
+servers: 1
+agents: 0
+# Join the hub's docker network so the hub's Argo CD can reach
+# this API server at https://k3d-dev-server-0:6443
+network: k3d-hub
+options:
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+    nodeLabels:
+      # Infra values pin workloads with nodeSelector env=<env>
+      - label: env=dev
+        nodeFilters:
+          - server:*

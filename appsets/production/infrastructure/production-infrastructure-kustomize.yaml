@@ -1,0 +1,53 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: production-infrastructure-kustomize
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  env: "production"
+          - git:
+              repoURL: https://github.com/nh4ttruong/argocd-gitops-hub.git
+              revision: HEAD
+              directories:
+                - path: workloads/*/envs/production
+  template:
+    metadata:
+      name: "{{index .path.segments 3}}-{{index .path.segments 1}}" # {env}-{appname}
+      labels:
+        env: production
+        engine: kustomize
+        type: infrastructure
+    spec:
+      project: "{{index .path.segments 3}}-infra"
+      source:
+        repoURL: https://github.com/nh4ttruong/argocd-gitops-hub.git
+        targetRevision: HEAD
+        path: "{{.path.path}}"
+        kustomize:
+          ignoreMissingComponents: true
+      destination:
+        server: "{{.server}}"
+        namespace: "{{index .path.segments 1}}"
+      syncPolicy:
+        ## production should not be automated
+        # automated:
+        #   prune: true
+        #   selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+          - ServerSideDiff=true
+        retry:
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+          limit: 7

@@ -1,0 +1,58 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: staging-infrastructure-helm
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  env: "staging"
+          - git:
+              repoURL: https://github.com/nh4ttruong/argocd-gitops-hub.git
+              revision: HEAD
+              directories:
+                - path: workloads/*/charts/staging
+  template:
+    metadata:
+      name: "{{index .path.segments 3}}-{{index .path.segments 1}}" # {env}-{appname}
+      labels:
+        env: staging
+        engine: helm
+        type: infrastructure
+    spec:
+      project: "{{index .path.segments 3}}-infra"
+      sources:
+        - repoURL: https://github.com/nh4ttruong/argocd-gitops-hub.git
+          targetRevision: HEAD
+          path: "{{.path.path}}"
+          helm:
+            valueFiles:
+              - $values/workloads/{{index .path.segments 1}}/values/common.yaml
+              - $values/workloads/{{index .path.segments 1}}/values/{{index .path.segments 3}}/values.yaml
+            ignoreMissingValueFiles: true
+        - repoURL: https://github.com/nh4ttruong/argocd-gitops-hub.git
+          targetRevision: HEAD
+          ref: values
+      destination:
+        server: "{{.server}}"
+        namespace: "{{index .path.segments 1}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+          - ServerSideDiff=true
+        retry:
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+          limit: 7

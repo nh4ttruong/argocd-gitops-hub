@@ -1,0 +1,148 @@
+ingress-nginx:
+  controller:
+    
+    kind: Deployment
+    replicaCount: 3
+
+    ingressClassResource:
+      enabled: true
+      name: nginx
+      default: true
+
+    ingressClass: nginx
+
+    watchIngressWithoutClass: true
+
+    allowSnippetAnnotations: true
+
+    service:
+      type: LoadBalancer
+      annotations:
+        loadbalancer.examplecloud.com/load-balancer-version: "v2"
+        service.beta.kubernetes.io/example-load-balancer-internal: "false"
+        service.beta.kubernetes.io/example-load-balancer-type: "Starter"
+        loadbalancer.examplecloud.com/proxy-protocol: "true"
+        loadbalancer.examplecloud.com/node-selector: "env=dev"
+        loadbalancer.examplecloud.com/enable-ingress-hostname: "true"
+        loadbalancer.examplecloud.com/keep-floatingip: "true"
+
+    config:
+      allow-snippet-annotations: "true"
+      use-proxy-protocol: "true"
+      enable-real-ip: "true"
+      real-ip-header: "X-Forwarded-For"
+      proxy-body-size: "0"
+      proxy-connect-timeout: "600"
+      proxy-read-timeout: "600"
+      proxy-send-timeout: "600"
+      enable-gzip: "true"
+      server-tokens: "false"
+      worker-cpu-affinity: auto
+      worker-processes: auto
+      max-worker-connections: "65535"
+      max-worker-open-files: "0"
+      proxy-buffer-size: 32k
+      proxy-buffers-number: "8"
+      proxy-busy-buffers-size: 64k
+      log-format-upstream: $remote_addr - $remote_user [$time_local] "$request" $status
+        $body_bytes_sent "$http_referer" "$http_user_agent" $request_length $request_time
+        [$proxy_upstream_name] [$proxy_alternative_upstream_name] $upstream_addr $upstream_response_length
+        $upstream_response_time $upstream_status $req_id $host $request_body $args
+
+    metrics:
+      enabled: true
+
+      serviceMonitor:
+        enabled: false
+
+      prometheusRule:
+        enabled: false
+        rules:
+        # # These are just examples rules, please adapt them to your needs
+        - alert: NGINXConfigFailed
+          expr: count(nginx_ingress_controller_config_last_reload_successful == 0) > 0
+          for: 1s
+          labels:
+            severity: critical
+          annotations:
+            description: bad ingress config - nginx config test failed
+            summary: uninstall the latest ingress changes to allow config reloads to resume
+        # # By default a fake self-signed certificate is generated as default and
+        # # it is fine if it expires. If `--default-ssl-certificate` flag is used
+        # # and a valid certificate passed please do not filter for `host` label!
+        # # (i.e. delete `{host!="_"}` so also the default SSL certificate is
+        # # checked for expiration)
+        - alert: NGINXCertificateExpiry
+          expr: (avg(nginx_ingress_controller_ssl_expire_time_seconds{host!="_"}) by (host) - time()) < 604800
+          for: 1s
+          labels:
+            severity: critical
+          annotations:
+            description: ssl certificate(s) will expire in less then a week
+            summary: renew expiring certificates to avoid downtime
+        - alert: NGINXTooMany500s
+          expr: 100 * ( sum( nginx_ingress_controller_requests{status=~"5.+"} ) / sum(nginx_ingress_controller_requests) ) > 5
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            description: Too many 5XXs
+            summary: More than 5% of all requests returned 5XX, this requires your attention
+        - alert: NGINXTooMany400s
+          expr: 100 * ( sum( nginx_ingress_controller_requests{status=~"4.+"} ) / sum(nginx_ingress_controller_requests) ) > 5
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            description: Too many 4XXs
+            summary: More than 5% of all requests returned 4XX, this requires your attention
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - '{{ include "ingress-nginx.name" . }}'
+              - key: app.kubernetes.io/instance
+                operator: In
+                values:
+                - '{{ .Release.Name }}'
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - controller
+            topologyKey: kubernetes.io/hostname
+
+    nodeSelector:
+      env: dev
+
+  defaultBackend:
+    enabled: true
+
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - '{{ include "ingress-nginx.name" . }}'
+              - key: app.kubernetes.io/instance
+                operator: In
+                values:
+                - '{{ .Release.Name }}'
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - default-backend
+            topologyKey: kubernetes.io/hostname
+
+    nodeSelector:
+      env: dev

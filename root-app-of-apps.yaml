@@ -1,0 +1,38 @@
+# root app-of-apps
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-99"
+spec:
+  destination:
+    namespace: argocd
+    server: https://kubernetes.default.svc
+  project: default
+  sources:
+    # This root app-of-apps as self-contained
+    - path: .
+      repoURL: https://github.com/nh4ttruong/argocd-gitops-hub.git
+      targetRevision: HEAD
+      directory:
+        include: root-app-of-apps.yaml
+    # One Application per environment (env tier) — Each delivers the
+    # ApplicationSets under appsets/<env>/. Policy lives at this tier:
+    # production is manual-gated and pinnable to a tag.
+    - path: apps
+      repoURL: https://github.com/nh4ttruong/argocd-gitops-hub.git
+      targetRevision: HEAD
+  syncPolicy:
+    automated:
+      selfHeal: true
+    retry:
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+      limit: 5
+    syncOptions:
+      - ApplyOutOfSyncOnly=true
+      - Prune=confirm

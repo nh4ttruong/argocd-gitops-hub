@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    resources.gardener.cloud/ignore: "true"
+    argocd.argoproj.io/sync-wave: "-99"
+  name: coredns-custom
+  namespace: kube-system
+data:
+  # Dedicated server block per zone — the default Corefile (k3s, Gardener)
+  # already uses the hosts plugin in its main block, so a hosts entry in
+  # *.override would crash CoreDNS ("plugin can only be used once per block").
+  custom-hosts.server: |
+    example.com:53 {
+        errors
+        cache 30
+        hosts {
+            198.51.100.192 argocd.example.com
+            198.51.100.192 vault.example.com
+            198.51.100.192 git.example.com
+        }
+    }

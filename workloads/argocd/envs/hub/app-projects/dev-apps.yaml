@@ -1,0 +1,20 @@
+# Workload/application project — narrower than the *-infra projects:
+# only Namespace is allowed at cluster scope (needed by CreateNamespace=true).
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: dev-apps
+  namespace: argocd
+spec:
+  description: Dev business applications project
+  sourceRepos:
+    - 'https://github.com/nh4ttruong/argocd-gitops-spokes.git'
+  destinations:
+    - namespace: '*'
+      server: 'https://k3d-dev-server-0:6443' # dev cluster (k3d demo — replace with the real API server)
+  clusterResourceWhitelist:
+    - group: ''
+      kind: 'Namespace'
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'

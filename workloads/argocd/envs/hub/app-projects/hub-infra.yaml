@@ -1,0 +1,20 @@
+# NOTE (demo configuration): resource whitelists are intentionally wide open
+# to keep the demo friction-free. Before real production use, tighten them.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: hub-infra
+  namespace: argocd
+spec:
+  description: Hub infrastructure project
+  sourceRepos:
+    - 'https://github.com/nh4ttruong/argocd-gitops-hub.git'
+  destinations:
+    - namespace: '*'
+      server: 'https://kubernetes.default.svc' # self-cluster
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'

@@ -1,0 +1,25 @@
+# Declarative registration of the hub (in-cluster) cluster with the `env`
+# label the ApplicationSet cluster generators select on. Replaces the
+# imperative `argocd cluster set in-cluster --label env=hub` step in bootstrap.
+#
+# NOTE: kind is Secret because Argo CD requires cluster registrations to be
+# Secrets, but this manifest contains NO credentials — in-cluster access uses
+# the argocd service account.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cluster-in-cluster
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: cluster
+    env: hub
+type: Opaque
+stringData:
+  name: in-cluster
+  server: https://kubernetes.default.svc
+  config: |
+    {
+      "tlsClientConfig": {
+        "insecure": false
+      }
+    }

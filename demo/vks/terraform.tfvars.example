@@ -1,0 +1,8 @@
+# Credentials: https://iam.console.vngcloud.vn/service-account
+client_id     = "your-client-id"
+client_secret = "your-client-secret"
+
+vpc_id     = "net-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+subnet_id  = "sub-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+ssh_key_id = "ssh-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+flavor_id  = "flav-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" # 2 vCPU / 4 GB
