@@ -118,7 +118,7 @@ ingress-nginx:
             topologyKey: kubernetes.io/hostname
 
     nodeSelector:
-      env: dev
+      env: staging
 
   defaultBackend:
     enabled: true
@@ -145,4 +145,4 @@ ingress-nginx:
             topologyKey: kubernetes.io/hostname
 
     nodeSelector:
-      env: dev
+      env: staging

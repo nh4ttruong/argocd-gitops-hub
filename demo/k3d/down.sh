@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tear down the local demo clusters.
 set -euo pipefail
-k3d cluster delete hub 2>/dev/null || true
-k3d cluster delete dev 2>/dev/null || true
+for c in production staging dev hub; do
+  k3d cluster delete "$c" 2>/dev/null || true
+done
 echo "Demo clusters removed."

@@ -11,7 +11,7 @@ spec:
     - 'https://github.com/nh4ttruong/argocd-gitops-hub.git'
   destinations:
     - namespace: '*'
-      server: '<PROD_CLUSTER_API_SERVER>' # prod cluster
+      server: 'https://k3d-production-server-0:6443' # production cluster (k3d demo — replace with the real API server)
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'

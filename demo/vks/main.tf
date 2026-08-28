@@ -18,15 +18,21 @@ resource "vngcloud_vks_cluster" "this" {
   enable_private_cluster         = false
   enabled_load_balancer_plugin   = true
   enabled_block_store_csi_plugin = true
+}
 
-  node_group {
-    name       = "${each.key}-pool"
-    flavor_id  = var.flavor_id
-    ssh_key_id = var.ssh_key_id
-    num_nodes  = 1
-    disk_size  = 50
+# Node groups stay separate resources, as the provider recommends — Inline
+# node_group blocks are ForceNew on the cluster.
+resource "vngcloud_vks_cluster_node_group" "this" {
+  for_each = var.clusters
 
-    # Infra values pin workloads with nodeSelector env=<env>
-    labels = { env = each.key }
-  }
+  cluster_id = vngcloud_vks_cluster.this[each.key].id
+  name       = "${each.key}-pool"
+
+  flavor_id  = var.flavor_id
+  ssh_key_id = var.ssh_key_id
+  num_nodes  = 1
+  disk_size  = 50
+
+  # Infra values pin workloads with nodeSelector env=<env>
+  labels = { env = each.key }
 }

@@ -11,7 +11,7 @@ spec:
     - 'https://github.com/nh4ttruong/argocd-gitops-spokes.git'
   destinations:
     - namespace: '*'
-      server: '<STAGING_CLUSTER_API_SERVER>' # staging cluster
+      server: 'https://k3d-staging-server-0:6443' # staging cluster (k3d demo — replace with the real API server)
   clusterResourceWhitelist:
     - group: ''
       kind: 'Namespace'

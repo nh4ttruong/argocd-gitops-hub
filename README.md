@@ -93,7 +93,7 @@ kubectl apply -f root-app-of-apps.yaml
 Root syncs itself, creates the four env Applications, which create the 14
 ApplicationSets, which generate the `hub-*` Applications — Including
 `hub-argocd`, from which point Argo CD manages its own upgrades.
-[demo/k3d/](demo/k3d/) scripts all three steps against local clusters.
+[demo/k3d/bootstrap.sh](demo/k3d/bootstrap.sh) scripts all three steps against a local k3d hub.
 
 ## Day-2
 
@@ -113,7 +113,8 @@ ApplicationSets, which generate the `hub-*` Applications — Including
 > [!NOTE]
 > Demo repo. For a real fleet: give production its own spokes repo with tighter
 > access control, tighten the `*-infra` AppProject whitelists (Currently wide
-> open) and replace the `<*_CLUSTER_API_SERVER>` placeholders. Secrets here are
+> open) and point the AppProject destinations at real API servers instead of
+> the k3d demo endpoints. Secrets here are
 > hand-applied and unencrypted — The repo credential and the spoke cluster
 > tokens sit in etcd as plain text, the one part of this repo that is not
 > GitOps-managed. Render them through External Secrets Operator or SOPS, and

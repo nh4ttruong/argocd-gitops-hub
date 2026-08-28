@@ -8,5 +8,6 @@ the ApplicationSet templates generate:
 | `{env}-infra` (hub/dev/staging/production) | `*-infrastructure-*` ApplicationSets | argocd-gitops-hub | Wide open (Demo) |
 | `{env}-apps` (dev/staging/production) | `*-application-*` ApplicationSets | argocd-gitops-spokes | `Namespace` only |
 
-Replace the `<*_CLUSTER_API_SERVER>` placeholders with the real spoke cluster
-API endpoints when registering clusters.
+Every `destinations.server` points at the k3d demo endpoint of its environment
+(`https://k3d-<env>-server-0:6443`). Swap them for the real API servers when
+registering clusters elsewhere.

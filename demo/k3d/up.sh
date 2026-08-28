@@ -1,47 +1,20 @@
 #!/usr/bin/env bash
-# Spin up a local k3d hub cluster and bootstrap the whole GitOps stack.
-# Prereqs: docker, k3d, kustomize, helm, kubectl.
+# Create the k3d demo clusters — Hub first, then the spokes.
+# Usage: ./demo/k3d/up.sh [env ...]   (Default: hub dev staging production)
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-echo "==> 1/4 Create k3d hub cluster"
-k3d cluster create --config clusters/k3d/configs/hub.yaml --wait
+ENVS=("$@")
+[ ${#ENVS[@]} -eq 0 ] && ENVS=(hub dev staging production)
 
-echo "==> 2/4 Install Argo CD (Renders helm chart via kustomize)"
-RENDER="$(mktemp)"
-kustomize build workloads/argocd/envs/hub --enable-helm > "$RENDER"
-# First pass may race CRD establishment — second pass converges (idempotent).
-kubectl apply --server-side --force-conflicts -f "$RENDER" || true
-kubectl wait --for condition=Established --timeout 120s \
-  crd/applications.argoproj.io crd/appprojects.argoproj.io crd/applicationsets.argoproj.io
-kubectl apply --server-side --force-conflicts -f "$RENDER"
-rm -f "$RENDER"
-kubectl -n argocd wait deploy --all --for condition=Available --timeout 300s
+for env in "${ENVS[@]}"; do
+  if k3d cluster list --no-headers 2>/dev/null | awk '{print $1}' | grep -qx "$env"; then
+    echo "==> Cluster '$env' already exists — Skipping"
+    continue
+  fi
+  echo "==> Creating cluster '$env'"
+  k3d cluster create --config "demo/k3d/configs/$env.yaml" --wait
+done
 
-# Private repos: export GITHUB_TOKEN before running to register repo credentials
-# (covers every repo under the account prefix — see Bootstrap in the hub README).
-if [ -n "${GITHUB_TOKEN:-}" ]; then
-  echo "==> 2b/4 Repository credentials (GITHUB_TOKEN detected)"
-  kubectl -n argocd apply -f - <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: repo-creds-github-nh4ttruong
-  namespace: argocd
-  labels:
-    argocd.argoproj.io/secret-type: repo-creds
-stringData:
-  type: git
-  url: https://github.com/nh4ttruong
-  username: x-access-token
-  password: ${GITHUB_TOKEN}
-EOF
-fi
-
-echo "==> 3/4 Apply root App-of-Apps (Last imperative action)"
-kubectl apply -f root-app-of-apps.yaml
-
-echo "==> 4/4 Done — Watch the chain reaction:"
-echo "    kubectl -n argocd get applications -w"
-echo "    Admin password: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
-echo "    UI: kubectl -n argocd port-forward svc/argocd-server 8081:443  ->  https://localhost:8081"
+echo
+echo "Clusters ready. Next: ./demo/k3d/bootstrap.sh"

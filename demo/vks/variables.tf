@@ -37,7 +37,7 @@ variable "name_prefix" {
 }
 
 variable "vks_version" {
-  description = "VKS control plane version; null lets VKS pick its default"
+  description = "VKS control plane version; null falls back to the provider default, 1.29.1-vks.1724605200"
   type        = string
   default     = null
 }

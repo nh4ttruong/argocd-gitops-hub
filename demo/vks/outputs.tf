@@ -8,8 +8,7 @@ output "cluster_ids" {
   value       = { for env, c in vngcloud_vks_cluster.this : env => c.id }
 }
 
-output "kubeconfigs" {
-  description = "env => kubeconfig"
-  value       = { for env, c in vngcloud_vks_cluster.this : env => c.config }
-  sensitive   = true
+output "node_group_ids" {
+  description = "env => node group ID"
+  value       = { for env, ng in vngcloud_vks_cluster_node_group.this : env => ng.id }
 }

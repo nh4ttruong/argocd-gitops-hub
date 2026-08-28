@@ -1,12 +1,12 @@
-# k3d config — Local dev spoke, registered to the hub afterwards.
+# k3d config — Local staging spoke, registered to the hub afterwards.
 apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
-  name: dev
+  name: staging
 servers: 1
 agents: 0
 # Join the hub's docker network so the hub's Argo CD can reach
-# this API server at https://k3d-dev-server-0:6443
+# this API server at https://k3d-staging-server-0:6443
 network: k3d-hub
 options:
   k3s:
@@ -16,6 +16,6 @@ options:
           - server:*
     nodeLabels:
       # Infra values pin workloads with nodeSelector env=<env>
-      - label: env=dev
+      - label: env=staging
         nodeFilters:
           - server:*
