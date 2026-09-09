@@ -1,0 +1,21 @@
+# Credentials and local state — never commit
+*.tfvars
+!*.tfvars.example
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+kubeconfig*
+*.kubeconfig
+.env
+.env.*
+
+# Helm build artifacts
+**/Chart.lock
+**/tmpcharts*
+workloads/*/charts/*/charts/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store

@@ -61,16 +61,18 @@ No ApplicationSet is edited for day-2 work.
 
 ## Bootstrap
 
-Both repos are private, so Argo CD needs a read-only credential. A single
-`repo-creds` secret on the account prefix covers both repos and both consumers,
-repo-server for rendering and applicationset-controller for the git generators.
+Both repos are public, so Argo CD reads them without a credential and step 2
+below is optional. Add it for a private fork, or to lift GitHub's anonymous
+rate limit. A single `repo-creds` secret on the account prefix covers both repos
+and both consumers, repo-server for rendering and applicationset-controller for
+the git generators.
 
 ```bash
 # 1 · Install Argo CD — Chart + AppProjects + the hub's own cluster registration
 kustomize build workloads/argocd/envs/hub --enable-helm | kubectl apply --server-side --force-conflicts -f -
 kubectl -n argocd wait deploy --all --for condition=Available --timeout 300s
 
-# 2 · Repository credential — Fine-grained PAT with Contents: Read-only
+# 2 · Repository credential (Optional) — Fine-grained PAT with Contents: Read-only
 printf 'PAT: '; read -rs GITHUB_TOKEN; echo
 kubectl -n argocd apply -f - <<EOF
 apiVersion: v1
@@ -119,3 +121,6 @@ ApplicationSets, which generate the `hub-*` Applications — Including
 > tokens sit in etcd as plain text, the one part of this repo that is not
 > GitOps-managed. Render them through External Secrets Operator or SOPS, and
 > prefer a GitHub App over a PAT so rotation is automatic.
+
+Full article: [Building a Self-Service Argo CD Architecture Across Multiple Clusters](https://greennode.ai/tutorial/argocd-multi-cluster-hub-spoke-self-service) on GreenNode.
+Licensed under [Apache 2.0](LICENSE).

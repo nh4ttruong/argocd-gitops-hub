@@ -27,14 +27,14 @@ already exist are skipped, so re-running is safe.
 ## 2 · Argo CD on the hub
 
 ```bash
-export GITHUB_TOKEN=<Fine-grained PAT, Contents: Read-only>
 ./demo/k3d/bootstrap.sh
+# Private fork only: export GITHUB_TOKEN=<Fine-grained PAT, Contents: Read-only> first
 ```
 
 Three phases, all pinned to the `k3d-hub` context: Render and apply the Argo CD
-chart, create the `repo-creds` secret that links both private repos, then apply
-`root-app-of-apps.yaml`. Without `GITHUB_TOKEN` the credential step is skipped
-and nothing renders, since both repos are private.
+chart, create the `repo-creds` secret if `GITHUB_TOKEN` is set, then apply
+`root-app-of-apps.yaml`. Both repos are public, so the credential step is
+optional and Argo CD reads them anonymously when it is skipped.
 
 Expected a few minutes later: `root` plus `hub-argocd`, `hub-cert-manager`,
 `hub-ingress-nginx`, `hub-coredns` and `hub-kustomization`, all Synced/Healthy.

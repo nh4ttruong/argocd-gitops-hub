@@ -16,7 +16,9 @@ $K apply --server-side --force-conflicts -f "$RENDER"
 rm -f "$RENDER"
 $K -n argocd wait deploy --all --for condition=Available --timeout 300s
 
-echo "==> 2/3 Link Git (Repository credential)"
+echo "==> 2/3 Link Git (Repository credential, optional)"
+# Both repos are public, so Argo CD reads them without a credential. Set
+# GITHUB_TOKEN only for a private fork, or to lift the anonymous rate limit.
 if [ -n "${GITHUB_TOKEN:-}" ]; then
   $K -n argocd apply -f - <<YAML
 apiVersion: v1
@@ -33,8 +35,8 @@ stringData:
   password: ${GITHUB_TOKEN}
 YAML
 else
-  echo "    GITHUB_TOKEN not set — Skipped. Both repos are private, so nothing"
-  echo "    will render until the credential exists. Export it and re-run."
+  echo "    GITHUB_TOKEN not set — Skipped. Both repos are public, so Argo CD"
+  echo "    reads them anonymously. Export a token and re-run for a private fork."
 fi
 
 echo "==> 3/3 Apply root App-of-Apps (Last imperative action)"
